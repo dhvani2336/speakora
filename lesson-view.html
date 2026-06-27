@@ -402,11 +402,11 @@
             }
 
             try {
-                const res = await fetch(`https://speakora-sgdl.vercel.app/api/lessons/${id}`);
+                const res = await fetch(`/api/lessons/${id}`);
                 if (!res.ok) throw new Error("Lesson not found");
                 currentLesson = await res.json();
 
-                const listRes = await fetch(`https://speakora-sgdl.vercel.app/api/lessons/lang/${currentLesson.language}`);
+                const listRes = await fetch(`/api/lessons/lang/${currentLesson.language}`);
                 allLessons = await listRes.json();
                 currentIndex = allLessons.findIndex(l => l._id === currentLesson._id);
 

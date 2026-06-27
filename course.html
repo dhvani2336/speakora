@@ -347,7 +347,7 @@
             const userId = localStorage.getItem("userId");
             if (userId) {
                 try {
-                    await fetch("https://speakora-sgdl.vercel.app/api/user/update-language", {
+                    await fetch("/api/user/update-language", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ userId, language })

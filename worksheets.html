@@ -571,26 +571,12 @@
 
         async function fetchWorksheets() {
             try {
-                const origins = ['', 'https://speakora-sgdl.vercel.app'];
-                let success = false;
-
-                for (const origin of origins) {
-                    try {
-                        const response = await fetch(`${origin}/api/worksheets`, {
-                            mode: origin ? 'cors' : 'same-origin'
-                        });
-                        if (response.ok) {
-                            allWorksheets = await response.json();
-                            success = true;
-                            console.log(`Worksheets loaded from ${origin || 'same origin'}`);
-                            break;
-                        }
-                    } catch (e) {
-                        continue;
-                    }
+                const response = await fetch('/api/worksheets');
+                if (response.ok) {
+                    allWorksheets = await response.json();
+                    console.log('Worksheets loaded successfully');
+                    renderWorksheets();
                 }
-
-                if (success) renderWorksheets();
             } catch (err) {
                 console.error("Failed to fetch worksheets", err);
             } finally {

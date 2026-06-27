@@ -406,7 +406,7 @@
 
       if (!ok) return;
 
-      fetch("https://speakora-sgdl.vercel.app/api/user/register", {
+      fetch("/api/user/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

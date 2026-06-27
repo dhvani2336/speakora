@@ -1,194 +1,185 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../models/user");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
-/* REGISTER */
-router.post("/register", async (req, res) => {
+/* ── GET fallback for POST-only routes ── */
+router.get("/register", (req, res) => {
+  res.json({ message: "Use POST method to register" });
+});
+
+router.get("/login", (req, res) => {
+  res.json({ message: "Use POST method to login" });
+});
+
+/* ── REGISTER ── */
+router.post("/register", async (req, res, next) => {
   try {
-    let { name, email, password, language } = req.body;
-    email = email.toLowerCase().trim();
+    let { name, username, email, phone, password, language } = req.body;
 
-    const existingUser = await User.findOne({ email });
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Name, email and password are required" });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+
+    // Check duplicate email
+    const existingUser = await User.findOne({ email: cleanEmail });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
+    // Check duplicate username
+    if (username) {
+      const existingUsername = await User.findOne({ username: username.trim() });
+      if (existingUsername) {
+        return res.status(400).json({ message: "Username already taken" });
+      }
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const user = new User({
       name,
-      email,
-      password, // In a real app, hash this!
+      username: username ? username.trim() : undefined,
+      email: cleanEmail,
+      phone: phone ? phone.trim() : undefined,
+      password: hashedPassword,
       languages: language ? [language] : []
     });
 
     await user.save();
-    res.json({ message: "User registered successfully" });
+    res.status(201).json({ message: "User registered successfully" });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    next(err);
   }
 });
 
-/* LOGIN */
-router.post("/login", async (req, res) => {
+/* ── LOGIN ── */
+router.post("/login", async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    console.log("Login attempt:", { email, password });
 
     if (!email || !password) {
       return res.status(400).json({ message: "Please provide both email and password" });
     }
 
-    // Find user by email (case-insensitive)
+    // Find user (case-insensitive)
     const user = await User.findOne({
-      email: { $regex: new RegExp(`^${email.trim()}$`, 'i') }
+      email: { $regex: new RegExp(`^${email.trim()}$`, "i") }
     });
 
-    if (!user || user.password !== password) {
+    if (!user || !user.password) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    res.json(user);
-
-  } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-/* GOOGLE LOGIN */
-const { OAuth2Client } = require('google-auth-library');
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-router.post("/google-login", async (req, res) => {
-  try {
-    const { token } = req.body;
-
-    // Verify Token
-    const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-    const payload = ticket.getPayload();
-
-    const { sub: googleId, email, name, picture } = payload;
-
-    // Check if user exists
-    let user = await User.findOne({ email });
-
-    if (user) {
-      // Evaluate if user needs update (e.g. add googleId if missing)
-      if (!user.googleId) {
-        user.googleId = googleId;
-        user.picture = picture;
-        await user.save();
-      }
-    } else {
-      // Create new user
-      user = new User({
-        name,
-        email,
-        password: "", // No password for Google users
-        googleId,
-        picture,
-        languages: ["English"]
-      });
-      await user.save();
+    // Compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    res.json(user);
+    // Sign JWT
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
-  } catch (err) {
-    console.error("Google Login Error:", err);
-    res.status(500).json({ message: "Google authentication failed" });
-  }
-});
-
-/* GOOGLE CALLBACK (Redirect Mode) */
-router.post("/google-callback", async (req, res) => {
-  try {
-    const { credential } = req.body;
-
-    // Verify Token
-    const ticket = await client.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
+    res.json({
+      _id: user._id,
+      name: user.name,
+      username: user.username || "",
+      email: user.email,
+      phone: user.phone || "",
+      languages: user.languages,
+      picture: user.picture || "",
+      subscription: user.subscription,
+      token
     });
-    const payload = ticket.getPayload();
-
-    const { sub: googleId, email, name, picture } = payload;
-
-    // Check if user exists
-    let user = await User.findOne({ email });
-
-    if (user) {
-      if (!user.googleId) {
-        user.googleId = googleId;
-        user.picture = picture;
-        await user.save();
-      }
-    } else {
-      user = new User({
-        name,
-        email,
-        password: "",
-        googleId,
-        picture,
-        languages: ["English"]
-      });
-      await user.save();
-    }
-
-    // Redirect to Dashboard with User Data
-    const userData = encodeURIComponent(JSON.stringify(user));
-    res.redirect(`https://speakora-one.vercel.app/dashboard.html?user_data=${userData}`);
 
   } catch (err) {
-    console.error("Google Callback Error:", err);
-    res.redirect("https://speakora-one.vercel.app/index.html?error=GoogleAuthFailed");
+    next(err);
   }
 });
 
-/* ⭐ MULTI LANGUAGE */
-router.post("/update-language", async (req, res) => {
+/* ── UPDATE LANGUAGE ── */
+router.post("/update-language", async (req, res, next) => {
   try {
     const { userId, language } = req.body;
 
     const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-    if (user.languages.length >= 3)
+    if (user.languages.length >= 3) {
       return res.status(400).json({ message: "Max 3 languages" });
+    }
 
-    if (!user.languages.includes(language))
+    if (!user.languages.includes(language)) {
       user.languages.push(language);
+    }
 
     await user.save();
-
     res.json({ languages: user.languages });
 
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    next(err);
   }
 });
-/* GET PROFILE */
-router.get("/profile/:id", async (req, res) => {
+
+/* ── GET PROFILE ── */
+router.get("/profile/:id", async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
     res.json(user);
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    next(err);
   }
 });
-/* CERTIFICATE DATA */
-router.get("/certificate/:id", async (req, res) => {
+
+/* ── UPDATE PROFILE ── */
+router.put("/profile/:id", async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.id)
-      .select("name languages");
+    const { name, username, phone } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-    res.json(user);
+    if (name) user.name = name;
+    if (username) user.username = username.trim();
+    if (phone) user.phone = phone.trim();
 
+    await user.save();
+    res.json({
+      _id: user._id,
+      name: user.name,
+      username: user.username || "",
+      email: user.email,
+      phone: user.phone || "",
+      languages: user.languages,
+      picture: user.picture || "",
+      subscription: user.subscription
+    });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    next(err);
+  }
+});
+
+/* ── CERTIFICATE DATA ── */
+router.get("/certificate/:id", async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id).select("name languages");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(user);
+  } catch (err) {
+    next(err);
   }
 });
 

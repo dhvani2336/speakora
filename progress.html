@@ -993,7 +993,7 @@
       const userLang = localStorage.getItem("language") || "English";
       let curriculum = [];
       try {
-        const res = await fetch(`https://speakora-sgdl.vercel.app/api/lessons/lang/${userLang}`);
+        const res = await fetch(`/api/lessons/lang/${userLang}`);
         if (res.ok) curriculum = await res.json();
       } catch (e) { console.error("Sync error:", e); }
 

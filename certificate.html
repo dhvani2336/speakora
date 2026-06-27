@@ -421,7 +421,7 @@
 
         const userId = localStorage.getItem("userId");
 
-        fetch("https://speakora-sgdl.vercel.app/api/user/profile/" + userId)
+        fetch("/api/user/profile/" + userId)
             .then(res => res.json())
             .then(user => {
 

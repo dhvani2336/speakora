@@ -381,30 +381,25 @@
   <script>
     // GOOGLE LOGIN HANDLER
     function handleCredentialResponse(response) {
-      console.log("Encoded JWT ID token: " + response.credential);
-
-      fetch("https://speakora-sgdl.vercel.app/api/user/google-login", {
+      fetch("/api/auth/google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: response.credential })
       })
         .then(res => res.json())
         .then(user => {
-          if (user.message) {
-            alert(user.message); // Error
+          if (user.message && !user._id) {
+            alert(user.message);
           } else {
-            // Success
             localStorage.setItem("loggedIn", "true");
             localStorage.setItem("userId", user._id);
             localStorage.setItem("name", user.name);
             localStorage.setItem("email", user.email);
-            // Save current language (fallback to first in array or English)
+            if (user.token) localStorage.setItem("token", user.token);
             localStorage.setItem("language", (user.languages && user.languages.length > 0) ? user.languages[0] : "English");
-            // Save ALL selected languages
             localStorage.setItem("languages", JSON.stringify(user.languages || []));
             localStorage.setItem("subscription", user.subscription);
 
-            // NEW: Check for Deletion Grace Period
             if (typeof handleDeletionGraceCheck === 'function' && !handleDeletionGraceCheck()) return;
 
             window.location.href = "course.html";
@@ -433,7 +428,7 @@
         return;
       }
 
-      fetch("https://speakora-sgdl.vercel.app/api/user/login", {
+      fetch("/api/user/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email, password: password })
@@ -445,11 +440,11 @@
           return res.json();
         })
         .then(user => {
-          // ✅ SAVE REQUIRED DATA
           localStorage.setItem("loggedIn", "true");
-          localStorage.setItem("userId", user._id); // Ensure ID is saved!
+          localStorage.setItem("userId", user._id);
           localStorage.setItem("name", user.name);
           localStorage.setItem("email", user.email);
+          if (user.token) localStorage.setItem("token", user.token);
           localStorage.setItem("language", (user.languages && user.languages.length > 0) ? user.languages[0] : "English");
           localStorage.setItem("languages", JSON.stringify(user.languages || []));
           localStorage.setItem("subscription", user.subscription);

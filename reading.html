@@ -635,32 +635,18 @@
 
         async function fetchStories() {
             try {
-                // Try relative first, then absolute for local dev
-                const origins = ['', 'https://speakora-sgdl.vercel.app'];
-                let success = false;
+                const response = await fetch('/api/stories');
+                if (response.ok) {
+                    allStories = await response.json();
 
-                for (const origin of origins) {
-                    try {
-                        const response = await fetch(`${origin}/api/stories`, {
-                            mode: origin ? 'cors' : 'same-origin'
-                        });
-                        if (response.ok) {
-                            allStories = await response.json();
+                    // Sort stories by level: Beginner -> Intermediate -> Advanced
+                    const levelOrder = { 'Beginner': 1, 'Intermediate': 2, 'Advanced': 3 };
+                    allStories.sort((a, b) => (levelOrder[a.category] || 99) - (levelOrder[b.category] || 99));
 
-                            // Sort stories by level: Beginner -> Intermediate -> Advanced
-                            const levelOrder = { 'Beginner': 1, 'Intermediate': 2, 'Advanced': 3 };
-                            allStories.sort((a, b) => (levelOrder[a.category] || 99) - (levelOrder[b.category] || 99));
-
-                            success = true;
-                            console.log(`Stories loaded from ${origin || 'same origin'}`);
-                            break;
-                        }
-                    } catch (e) {
-                        continue;
-                    }
+                    console.log('Stories loaded successfully');
+                } else {
+                    throw new Error('Failed to load stories');
                 }
-
-                if (!success) throw new Error('Could not reach backend');
             } catch (err) {
                 console.warn('Backend not accessible, checking global READING_DATABASE fallback');
                 // Use fallback from local script if needed (for static testing)

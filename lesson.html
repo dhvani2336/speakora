@@ -331,7 +331,7 @@
 
       try {
         // Fetch lessons
-        const res = await fetch(`https://speakora-sgdl.vercel.app/api/lessons/lang/${lang}`);
+        const res = await fetch(`/api/lessons/lang/${lang}`);
 
         if (!res.ok) throw new Error("Could not connect to server");
 
