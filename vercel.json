@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "installCommand": "cd speakora-backend && npm install",
   "builds": [
     {
       "src": "speakora-backend/server.js",
@@ -10,15 +11,15 @@
       "use": "@vercel/static"
     },
     {
-      "src": "css/*.css",
+      "src": "css/**",
       "use": "@vercel/static"
     },
     {
-      "src": "js/*.js",
+      "src": "js/**",
       "use": "@vercel/static"
     },
     {
-      "src": "assets/**/*",
+      "src": "assets/**",
       "use": "@vercel/static"
     }
   ],

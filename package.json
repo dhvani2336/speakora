@@ -1,0 +1,9 @@
+{
+  "name": "speakora",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cd speakora-backend && npm install --production",
+    "install": "cd speakora-backend && npm install"
+  }
+}
