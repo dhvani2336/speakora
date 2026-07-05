@@ -967,9 +967,9 @@
                 localStorage.setItem("pendingDeletion", "true");
                 localStorage.setItem("deletionRequestTime", deletionTime.toString());
 
-                // Logout the user and send back to index.html
+                // Logout the user and send back to login.html
                 alert("Account removal request submitted. You will be logged out now. Re-login within 15 days to cancel.");
-                window.location.href = "index.html";
+                window.location.href = "login.html";
             }
         }
 
@@ -977,7 +977,7 @@
         function logout() {
             if (confirm("Are you sure you want to log out?")) {
                 ['userId', 'currentUser', 'loggedIn', 'name', 'email', 'subscription', 'language', 'languages', 'pendingDeletion', 'deletionRequestTime'].forEach(k => localStorage.removeItem(k));
-                window.location.href = "index.html";
+                window.location.href = "login.html";
             }
         }
     </script>

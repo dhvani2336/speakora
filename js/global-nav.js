@@ -8,7 +8,7 @@
 
 (function () {
   const currentPath = window.location.pathname.split("/").pop() || "index.html";
-  const excludedPages = ["index.html", "register.html", "home.html", "course.html", "dashboard.html", "coming-soon.html", "grammar-test.html", "vocab-test.html", "sentence-test.html", "listening-test.html", "writing-test.html", "pronunciation.html", ""];
+  const excludedPages = ["index.html", "register.html", "login.html", "course.html", "dashboard.html", "coming-soon.html", "grammar-test.html", "vocab-test.html", "sentence-test.html", "listening-test.html", "writing-test.html", "pronunciation.html", ""];
 
   const userLang = localStorage.getItem("language") || "English";
   if (userLang !== "English" && !excludedPages.includes(currentPath)) {

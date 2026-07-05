@@ -15,7 +15,7 @@ function register() {
 
     localStorage.setItem("user_" + username, password);
     alert("Registration successful. Please login.");
-    window.location.href = "index.html";
+    window.location.href = "login.html";
 }
 
 
@@ -59,7 +59,7 @@ function login() {
 /* ================= LOGOUT ================= */
 function logout() {
     ['userId', 'currentUser', 'loggedIn', 'name', 'email', 'subscription', 'language', 'languages', 'pendingDeletion', 'deletionRequestTime'].forEach(k => localStorage.removeItem(k));
-    window.location.href = "index.html";
+    window.location.href = "login.html";
 }
 
 
@@ -138,7 +138,7 @@ function loadProfile() {
 /* ================= PAGE PROTECTION ================= */
 function checkLogin() {
     if (localStorage.getItem("loggedIn") !== "true") {
-        window.location.href = "index.html";
+        window.location.href = "login.html";
     }
 }
 
