@@ -363,12 +363,7 @@
           <span>OR</span>
         </div>
 
-        <div id="g_id_onload" data-client_id="534836862614-fgaerdkq5oniphme2svajr53gd0poak2.apps.googleusercontent.com"
-          data-context="signin" data-ux_mode="popup" data-callback="handleCredentialResponse" data-auto_prompt="false">
-        </div>
-        <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="continue_with"
-          data-shape="pill" data-logo_alignment="left" data-width="340">
-        </div>
+        <div id="g_id_signin" class="g_id_signin"></div>
 
         <p class="signup-link">
           Don't have an account? <a href="register.html">Sign Up</a>
@@ -407,6 +402,36 @@
         })
         .catch(err => console.error("Google Login Error:", err));
     }
+
+    // Dynamic Google Sign-In Init
+    function initGoogleSignIn() {
+      if (typeof google === "undefined" || !google.accounts) {
+        setTimeout(initGoogleSignIn, 100);
+        return;
+      }
+      fetch("/api/auth/config")
+        .then(res => res.json())
+        .then(config => {
+          const clientId = config.googleClientId;
+          if (clientId) {
+            google.accounts.id.initialize({
+              client_id: clientId,
+              callback: handleCredentialResponse,
+              context: "signin",
+              ux_mode: "popup",
+              auto_prompt: false
+            });
+            google.accounts.id.renderButton(
+              document.getElementById("g_id_signin"),
+              { theme: "outline", size: "large", type: "standard", shape: "pill", logo_alignment: "left", width: 340 }
+            );
+          } else {
+            console.warn("Google Client ID not configured in backend environment variables.");
+          }
+        })
+        .catch(err => console.error("Error loading Google auth config:", err));
+    }
+    document.addEventListener("DOMContentLoaded", initGoogleSignIn);
   </script>
 
   <footer>© 2026 Speakora. All rights reserved.</footer>
